@@ -47,6 +47,7 @@ class Tgram:
         self.shape_matrix = possible_shapes[random.randint(0, len(possible_shapes) - 1)]
         self.position = (0, 10)
         self.height = len(self.shape_matrix)
+        self.width = len(self.shape_matrix[0])
 
     def fall(self):
         if self.position[0] <= WINDOW_HEIGHT - self.height:
@@ -55,12 +56,27 @@ class Tgram:
     def move(self, d: int):
         self.position = (self.position[0], self.position[1] + d)
 
-    def is_blocked(self, grid: List[List]):
+    def can_fall(self, grid: List[List]):
         for col, block in enumerate(self.shape_matrix[-1]):
             if block:
                 if grid[self.position[0] + self.height][col + self.position[1]]:
-                    return True
-        return False
+                    return False
+        return True
+
+    def is_blocked(self, grid: List[List], direction: int) -> bool:
+        """
+        checks if shape can move along the x-axis along the given direction
+        """
+        for row_num, shape_row in enumerate(self.shape_matrix):
+            collision_index = 0 if direction < 0 else -1
+            # skip checking row if this row of shape matrix has no tile on collision index
+            if not shape_row[collision_index]:
+                continue
+            neighbor_y = self.position[0] + row_num
+            # since position is top left point of shape matrix,
+            # width needs to be added to check right neighbor
+            neighbor_x = self.position[1] + (direction if direction < 0 else self.width)
+            return grid[neighbor_y][neighbor_x]
 
     def rotate_right(self):
         new_shape_matrix: List[List[int]] = []
@@ -75,6 +91,7 @@ class Tgram:
             col += 1
         self.shape_matrix = new_shape_matrix
         self.height = len(self.shape_matrix)
+        self.width = len(self.shape_matrix[0])
 
 
 def print_grid(grid: List[List[int]]) -> None:
@@ -120,7 +137,7 @@ with term.cbreak():
             clear_tgram(game_grid, tgram)
 
             if steps % 3 == 0:
-                if not tgram.is_blocked(game_grid):
+                if tgram.can_fall(game_grid):
                     tgram.fall()
                 else:
                     place_tgram(game_grid, tgram)
@@ -131,9 +148,15 @@ with term.cbreak():
             # change tgram pos based on user input
             val = term.inkey(timeout=0.05)
             if val.code == curses.KEY_LEFT:
-                tgram.move(-1)
+                if tgram.position[1] > 0:
+                    direction = -1
+                    if not tgram.is_blocked(game_grid, direction):
+                        tgram.move(direction)
             elif val.code == curses.KEY_RIGHT:
-                tgram.move(1)
+                if tgram.position[1] + len(tgram.shape_matrix[0]) < WINDOW_WIDTH:
+                    direction = 1
+                    if not tgram.is_blocked(game_grid, direction):
+                        tgram.move(direction)
             elif val == ' ':
                 tgram.rotate_right()
             elif val.lower() == 'q':
