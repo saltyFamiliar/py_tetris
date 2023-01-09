@@ -1,10 +1,9 @@
-import random
-import time
-from typing import List, Tuple
+import curses
+from random import randint
 from time import sleep
+from typing import List
 
 from blessed import Terminal
-import curses
 
 WINDOW_WIDTH = 20
 WINDOW_HEIGHT = 15
@@ -44,7 +43,7 @@ class Tgram:
             ]
         ]
 
-        self.shape_matrix = possible_shapes[random.randint(0, len(possible_shapes) - 1)]
+        self.shape_matrix = possible_shapes[randint(0, len(possible_shapes) - 1)]
         self.position = (0, 10)
         self.height = len(self.shape_matrix)
         self.width = len(self.shape_matrix[0])
@@ -168,9 +167,9 @@ with term.cbreak():
             with term.location(30, 0):
                 print("score: ", steps)
 
-            time.sleep(0.1)
+            sleep(0.1)
 
             if steps % 2 == 0:
-                time.sleep(0.1)
+                sleep(0.1)
 
             steps += 1
